@@ -1,511 +1,382 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantum Sync Portal</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST // SYNC</title>
+    <!-- PeerJS for WebRTC (Peer-to-Peer) -->
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <style>
+        /* === BASE SETTINGS & GEN Z VIBE === */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Syne:wght@700;800&display=swap');
 
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+        :root {
+            --bg-color: #050505;
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00ffff;
+            --acid-green: #baff29;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
 
-<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk', sans-serif;
+        }
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:'Orbitron',sans-serif;
-}
+        body, html {
+            height: 100%;
+            background-color: var(--bg-color);
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-body{
-background:#050816;
-overflow:hidden;
-color:white;
-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
-}
+        /* === ANIMATED BACKGROUND === */
+        .grid-bg {
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(var(--glass-border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: gridMove 10s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
 
-canvas{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-z-index:-1;
-}
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(40px) translateZ(-200px); }
+        }
 
-#loginPage,
-#chatPage{
-width:95%;
-max-width:1400px;
-height:92vh;
-background:rgba(255,255,255,0.05);
-backdrop-filter:blur(20px);
-border:1px solid rgba(255,255,255,0.1);
-border-radius:25px;
-overflow:hidden;
-box-shadow:0 0 40px rgba(0,255,255,0.2);
-}
+        .blob {
+            position: absolute;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, var(--neon-pink) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 8s infinite alternate ease-in-out;
+            z-index: 0;
+        }
+        .blob.cyan { background: radial-gradient(circle, var(--neon-cyan) 0%, transparent 70%); top: 10%; right: 10%; animation-delay: -4s; }
 
-#loginPage{
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-gap:20px;
-}
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 50px) scale(1.2); }
+        }
 
-.title{
-font-size:48px;
-font-weight:700;
-text-shadow:0 0 20px cyan;
-}
+        /* === APP CONTAINER (GLASSMORPHISM) === */
+        #app {
+            position: relative;
+            z-index: 10;
+            width: 95%; max-width: 500px; height: 90vh;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
 
-.inputBox{
-width:320px;
-padding:16px;
-border:none;
-border-radius:12px;
-background:rgba(255,255,255,0.08);
-color:white;
-outline:none;
-font-size:16px;
-}
+        /* === SETUP SCREEN === */
+        #setup-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 2rem;
+            text-align: center;
+        }
 
-.loginBtn{
-padding:15px 35px;
-border:none;
-border-radius:14px;
-background:linear-gradient(45deg,#00f5ff,#0066ff);
-color:white;
-font-size:18px;
-font-weight:bold;
-cursor:pointer;
-transition:0.4s;
-}
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 3rem;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glitch 3s infinite;
+        }
 
-.loginBtn:hover{
-transform:scale(1.05);
-box-shadow:0 0 25px cyan;
-}
+        @keyframes glitch {
+            0%, 100% { text-shadow: none; }
+            92% { text-shadow: 2px 0 var(--neon-cyan), -2px 0 var(--neon-pink); }
+            94% { text-shadow: -2px 0 var(--neon-cyan), 2px 0 var(--neon-pink); }
+            96% { text-shadow: 0 0 none; }
+        }
 
-#chatPage{
-display:none;
-grid-template-columns:320px 1fr;
-}
+        .subtitle { color: #888; margin-bottom: 2rem; font-size: 0.9rem; }
 
-.sidebar{
-background:rgba(0,0,0,0.4);
-border-right:1px solid rgba(255,255,255,0.08);
-padding:20px;
-display:flex;
-flex-direction:column;
-}
+        input {
+            width: 100%; padding: 16px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: #fff; font-size: 1.1rem;
+            outline: none; text-align: center;
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
 
-.logo{
-font-size:28px;
-margin-bottom:30px;
-text-shadow:0 0 10px cyan;
-}
+        input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); }
 
-.userCard{
-background:rgba(255,255,255,0.05);
-padding:20px;
-border-radius:18px;
-margin-bottom:20px;
-}
+        button {
+            width: 100%; padding: 16px;
+            background: var(--acid-green);
+            color: #000; border: none;
+            border-radius: 12px;
+            font-size: 1.1rem; font-weight: 700;
+            cursor: pointer; text-transform: uppercase;
+            transition: all 0.2s;
+        }
 
-.onlineDot{
-width:12px;
-height:12px;
-background:#00ff88;
-border-radius:50%;
-display:inline-block;
-box-shadow:0 0 12px #00ff88;
-}
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(186, 255, 41, 0.4); }
+        button:active { transform: translateY(0); }
 
-.chatArea{
-display:flex;
-flex-direction:column;
-height:100%;
-}
+        /* === CHAT SCREEN === */
+        #chat-screen {
+            display: none; flex-direction: column; height: 100%;
+        }
 
-.chatHeader{
-height:90px;
-border-bottom:1px solid rgba(255,255,255,0.08);
-display:flex;
-align-items:center;
-padding:20px;
-font-size:22px;
-}
+        header {
+            padding: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.3);
+        }
 
-.messages{
-flex:1;
-padding:20px;
-overflow-y:auto;
-display:flex;
-flex-direction:column;
-gap:16px;
-}
+        .status {
+            font-size: 0.8rem; display: flex; align-items: center; gap: 8px;
+        }
 
-.message{
-max-width:70%;
-padding:16px;
-border-radius:18px;
-background:rgba(255,255,255,0.08);
-animation:fadeIn 0.3s ease;
-}
+        .dot {
+            width: 8px; height: 8px; background: var(--acid-green);
+            border-radius: 50%; box-shadow: 0 0 10px var(--acid-green);
+            animation: pulse 1.5s infinite;
+        }
 
-.self{
-align-self:flex-end;
-background:linear-gradient(45deg,#00aaff,#0066ff);
-}
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-.fileCard{
-padding:12px;
-margin-top:10px;
-background:rgba(255,255,255,0.08);
-border-radius:10px;
-}
+        #messages {
+            flex-grow: 1; padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 15px;
+        }
 
-.chatInputArea{
-height:110px;
-border-top:1px solid rgba(255,255,255,0.08);
-display:flex;
-align-items:center;
-gap:12px;
-padding:20px;
-}
+        /* Scrollbar hide */
+        #messages::-webkit-scrollbar { width: 0; }
 
-#messageInput{
-flex:1;
-height:55px;
-border:none;
-border-radius:14px;
-padding:0 20px;
-background:rgba(255,255,255,0.08);
-color:white;
-font-size:16px;
-outline:none;
-}
+        .msg-wrap {
+            max-width: 85%; position: relative;
+            animation: slideIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
 
-.sendBtn,
-.uploadBtn{
-height:55px;
-padding:0 24px;
-border:none;
-border-radius:14px;
-background:linear-gradient(45deg,#00f5ff,#0066ff);
-color:white;
-font-weight:bold;
-cursor:pointer;
-}
+        .msg-wrap.self { align-self: flex-end; }
+        .msg-wrap.peer { align-self: flex-start; }
 
-.typing{
-font-size:13px;
-color:#8ccfff;
-padding-left:25px;
-padding-bottom:8px;
-}
+        .msg {
+            padding: 12px 18px; border-radius: 16px;
+            font-size: 1rem; line-height: 1.4; word-wrap: break-word;
+        }
 
-@keyframes fadeIn{
-from{
-opacity:0;
-transform:translateY(10px);
-}
+        .self .msg { background: var(--neon-cyan); color: #000; border-bottom-right-radius: 4px; }
+        .peer .msg { background: #222; border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
 
-to{
-opacity:1;
-transform:translateY(0);
-}
-}
+        /* 2 Minute Auto-Destruct Timer Bar */
+        .timer-bar {
+            height: 2px; background: rgba(255,255,255,0.3);
+            margin-top: 4px; border-radius: 2px;
+            width: 100%; transform-origin: left;
+            animation: shrink 120s linear forwards; /* 120 seconds exact */
+        }
+        .self .timer-bar { background: rgba(0,0,0,0.3); }
 
-@media(max-width:900px){
+        @keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
 
-#chatPage{
-grid-template-columns:1fr;
-}
+        .input-area {
+            padding: 20px; border-top: 1px solid var(--glass-border);
+            display: flex; gap: 10px; background: rgba(0,0,0,0.3);
+        }
 
-.sidebar{
-display:none;
-}
+        .input-area input { margin-bottom: 0; border-radius: 24px; padding: 12px 20px; text-align: left; }
+        .input-area button { width: auto; padding: 0 24px; border-radius: 24px; background: var(--neon-pink); color: white; }
+        .input-area button:hover { box-shadow: 0 5px 15px rgba(255, 0, 255, 0.4); }
 
-.message{
-max-width:90%;
-}
+        .sys-msg {
+            text-align: center; color: #888; font-size: 0.8rem;
+            align-self: center; margin: 10px 0; text-transform: uppercase; letter-spacing: 1px;
+        }
 
-.title{
-font-size:34px;
-}
-
-}
-
-</style>
+    </style>
 </head>
-
 <body>
 
-<canvas id="matrix"></canvas>
-
-<div id="loginPage">
-<div class="title">QUANTUM SYNC</div>
-<input id="email" class="inputBox" value="kali@quantum.local">
-<input id="password" type="password" class="inputBox" value="kali">
-<button class="loginBtn" onclick="login()">ENTER PORTAL</button>
-</div>
-
-<div id="chatPage">
-
-<div class="sidebar">
-<div class="logo">QUANTUM</div>
-
-<div class="userCard">
-<h2>KALI</h2>
-<br>
-<span class="onlineDot"></span>
-<span> ONLINE</span>
-</div>
-
-<div class="userCard">
-<h3>FEATURES</h3>
-<br>
-<p>Realtime Sync</p>
-<p>Cloud Storage</p>
-<p>Encrypted Uploads</p>
-<p>Responsive UI</p>
-</div>
-</div>
-
-<div class="chatArea">
-<div class="chatHeader">
-Realtime Secure Channel
-</div>
-
-<div class="messages" id="messages"></div>
-
-<div class="typing" id="typing"></div>
-
-<div class="chatInputArea">
-<input id="messageInput" placeholder="Type secure message...">
-<input type="file" id="fileInput" hidden>
-<button class="uploadBtn" onclick="document.getElementById('fileInput').click()">FILE</button>
-<button class="sendBtn" onclick="sendMessage()">SEND</button>
-</div>
-</div>
-
-</div>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-getAuth,
-signInWithEmailAndPassword,
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-getFirestore,
-collection,
-addDoc,
-onSnapshot,
-query,
-orderBy,
-serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-import {
-getStorage,
-ref,
-uploadBytes,
-getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
-const firebaseConfig = {
-apiKey: "YOUR_API_KEY",
-authDomain: "YOUR_DOMAIN",
-projectId: "YOUR_PROJECT_ID",
-storageBucket: "YOUR_STORAGE_BUCKET",
-messagingSenderId: "YOUR_SENDER_ID",
-appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-const loginPage=document.getElementById('loginPage');
-const chatPage=document.getElementById('chatPage');
-const messagesDiv=document.getElementById('messages');
-const messageInput=document.getElementById('messageInput');
-const fileInput=document.getElementById('fileInput');
-
-window.login=async()=>{
-
-const email=document.getElementById('email').value;
-const password=document.getElementById('password').value;
-
-try{
-await signInWithEmailAndPassword(auth,email,password);
-}
-catch(err){
-alert(err.message);
-}
-
-};
-
-onAuthStateChanged(auth,user=>{
-
-if(user){
-loginPage.style.display='none';
-chatPage.style.display='grid';
-loadMessages();
-}
-
-});
-
-async function sendMessage(){
-
-const text=messageInput.value.trim();
-
-if(text==='')return;
-
-await addDoc(collection(db,'messages'),{
-text,
-user:'KALI',
-time:serverTimestamp(),
-type:'text'
-});
-
-messageInput.value='';
-
-}
-
-fileInput.addEventListener('change',async(e)=>{
-
-const file=e.target.files[0];
-
-if(!file)return;
-
-const storageRef=ref(storage,'uploads/'+Date.now()+'_'+file.name);
-
-await uploadBytes(storageRef,file);
-
-const url=await getDownloadURL(storageRef);
-
-await addDoc(collection(db,'messages'),{
-fileName:file.name,
-fileUrl:url,
-user:'KALI',
-time:serverTimestamp(),
-type:'file'
-});
-
-});
-
-function loadMessages(){
-
-const q=query(collection(db,'messages'),orderBy('time'));
-
-onSnapshot(q,snapshot=>{
-
-messagesDiv.innerHTML='';
-
-snapshot.forEach(doc=>{
-
-const data=doc.data();
-
-const div=document.createElement('div');
-
-div.className='message self';
-
-if(data.type==='text'){
-
-div.innerHTML=`
-<b>${data.user}</b>
-<br><br>
-${data.text}
-`;
-
-}
-else{
-
-div.innerHTML=`
-<b>${data.user}</b>
-<div class='fileCard'>
-📁 ${data.fileName}
-<br><br>
-<a href='${data.fileUrl}' target='_blank' style='color:cyan;'>Download File</a>
-</div>
-`;
-
-}
-
-messagesDiv.appendChild(div);
-
-});
-
-messagesDiv.scrollTop=messagesDiv.scrollHeight;
-
-});
-
-}
-
-messageInput.addEventListener('keypress',(e)=>{
-if(e.key==='Enter')sendMessage();
-});
-
-const canvas=document.getElementById('matrix');
-const ctx=canvas.getContext('2d');
-
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
-const letters='01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%^&*';
-const fontSize=14;
-const columns=canvas.width/fontSize;
-const drops=[];
-
-for(let x=0;x<columns;x++){
-drops[x]=1;
-}
-
-function draw(){
-
-ctx.fillStyle='rgba(0,0,0,0.05)';
-ctx.fillRect(0,0,canvas.width,canvas.height);
-
-ctx.fillStyle='#00ffee';
-ctx.font=fontSize+'px monospace';
-
-for(let i=0;i<drops.length;i++){
-
-const text=letters[Math.floor(Math.random()*letters.length)];
-
-ctx.fillText(text,i*fontSize,drops[i]*fontSize);
-
-if(drops[i]*fontSize>canvas.height&&Math.random()>0.975){
-drops[i]=0;
-}
-
-drops[i]++;
-
-}
-
-}
-
-setInterval(draw,35);
-
-window.addEventListener('resize',()=>{
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-});
-
-</script>
-
+    <div class="blob"></div>
+    <div class="blob cyan"></div>
+    <div class="grid-bg"></div>
+
+    <div id="app">
+        <!-- SCREEN 1: SETUP -->
+        <div id="setup-screen">
+            <h1>Ghost Sync</h1>
+            <p class="subtitle">Zero DB. Zero Trace. 120s Auto-Destruct.</p>
+            
+            <div id="init-box">
+                <button onclick="createRoom()">Create New Sync</button>
+                <div style="margin: 20px 0; color: #555;">— OR —</div>
+                <input type="text" id="join-id" placeholder="Paste Sync Key here" autocomplete="off">
+                <button onclick="joinRoom()" style="background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan);">Join Sync</button>
+            </div>
+
+            <div id="loading-box" style="display:none; margin-top: 20px;">
+                <p style="color: var(--neon-pink);">Waiting for connection...</p>
+                <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Your Sync Key (Copy & open on mobile):</p>
+                <input type="text" id="my-peer-id" readonly onclick="this.select(); document.execCommand('copy'); alert('Copied!')" style="cursor: pointer; margin-top: 5px;">
+            </div>
+        </div>
+
+        <!-- SCREEN 2: CHAT -->
+        <div id="chat-screen">
+            <header>
+                <div style="font-weight: 700; letter-spacing: 1px;">GHOST_CHANNEL</div>
+                <div class="status"><div class="dot"></div> LINKED</div>
+            </header>
+            
+            <div id="messages">
+                <div class="sys-msg">P2P Encrypted. Messages vanish in 2 mins.</div>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" id="msg-input" placeholder="Type message..." autocomplete="off">
+                <button onclick="sendMsg()">SEND</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === CORE P2P LOGIC ===
+        let peer = null;
+        let conn = null;
+        const msgLifetime = 120000; // 120 seconds in milliseconds
+
+        const setupScreen = document.getElementById('setup-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        const initBox = document.getElementById('init-box');
+        const loadingBox = document.getElementById('loading-box');
+        const myPeerIdInput = document.getElementById('my-peer-id');
+        const messagesDiv = document.getElementById('messages');
+        const msgInput = document.getElementById('msg-input');
+
+        // 1. Create a Room (Device A - Laptop)
+        function createRoom() {
+            initBox.style.display = 'none';
+            loadingBox.style.display = 'block';
+            
+            // Initialize PeerJS
+            peer = new Peer(); 
+            
+            peer.on('open', (id) => {
+                myPeerIdInput.value = id; // Show the generated Sync Key
+            });
+
+            // Listen for Device B connecting
+            peer.on('connection', (connection) => {
+                conn = connection;
+                setupChat();
+            });
+        }
+
+        // 2. Join a Room (Device B - Mobile)
+        function joinRoom() {
+            const targetId = document.getElementById('join-id').value.trim();
+            if (!targetId) return alert("Enter a valid Sync Key!");
+
+            peer = new Peer();
+            
+            peer.on('open', () => {
+                // Connect to Device A
+                conn = peer.connect(targetId);
+                setupChat();
+            });
+        }
+
+        // 3. Setup the Chat interface once connected
+        function setupChat() {
+            conn.on('open', () => {
+                setupScreen.style.display = 'none';
+                chatScreen.style.display = 'flex';
+                
+                // Listen for incoming messages
+                conn.on('data', (data) => {
+                    renderMessage(data, 'peer');
+                });
+            });
+
+            conn.on('close', () => {
+                alert("Connection lost. Refresh to restart.");
+                location.reload();
+            });
+        }
+
+        // 4. Send a Message
+        function sendMsg() {
+            const text = msgInput.value.trim();
+            if (!text || !conn) return;
+
+            // Send via WebRTC Data Channel (No API, No Database)
+            conn.send(text);
+            
+            // Render on our own screen
+            renderMessage(text, 'self');
+            msgInput.value = '';
+        }
+
+        // Handle Enter key
+        msgInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMsg();
+        });
+
+        // 5. Render Message & Handle Auto-Destruction
+        function renderMessage(text, sender) {
+            const wrap = document.createElement('div');
+            wrap.className = `msg-wrap ${sender}`;
+            
+            const msgObj = document.createElement('div');
+            msgObj.className = 'msg';
+            msgObj.innerText = text;
+
+            const timerBar = document.createElement('div');
+            timerBar.className = 'timer-bar';
+
+            wrap.appendChild(msgObj);
+            wrap.appendChild(timerBar);
+            messagesDiv.appendChild(wrap);
+
+            // Auto scroll
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // The extraordinary part: Absolute auto-destruct
+            setTimeout(() => {
+                wrap.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => {
+                    if(wrap.parentNode) wrap.parentNode.removeChild(wrap);
+                }, 500);
+            }, msgLifetime);
+        }
+    </script>
 </body>
 </html>
-
