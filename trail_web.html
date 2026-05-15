@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Sync Portal</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Orbitron',sans-serif;
+}
+
+body{
+background:#050816;
+overflow:hidden;
+color:white;
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:-1;
+}
+
+#loginPage,
+#chatPage{
+width:95%;
+max-width:1400px;
+height:92vh;
+background:rgba(255,255,255,0.05);
+backdrop-filter:blur(20px);
+border:1px solid rgba(255,255,255,0.1);
+border-radius:25px;
+overflow:hidden;
+box-shadow:0 0 40px rgba(0,255,255,0.2);
+}
+
+#loginPage{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:20px;
+}
+
+.title{
+font-size:48px;
+font-weight:700;
+text-shadow:0 0 20px cyan;
+}
+
+.inputBox{
+width:320px;
+padding:16px;
+border:none;
+border-radius:12px;
+background:rgba(255,255,255,0.08);
+color:white;
+outline:none;
+font-size:16px;
+}
+
+.loginBtn{
+padding:15px 35px;
+border:none;
+border-radius:14px;
+background:linear-gradient(45deg,#00f5ff,#0066ff);
+color:white;
+font-size:18px;
+font-weight:bold;
+cursor:pointer;
+transition:0.4s;
+}
+
+.loginBtn:hover{
+transform:scale(1.05);
+box-shadow:0 0 25px cyan;
+}
+
+#chatPage{
+display:none;
+grid-template-columns:320px 1fr;
+}
+
+.sidebar{
+background:rgba(0,0,0,0.4);
+border-right:1px solid rgba(255,255,255,0.08);
+padding:20px;
+display:flex;
+flex-direction:column;
+}
+
+.logo{
+font-size:28px;
+margin-bottom:30px;
+text-shadow:0 0 10px cyan;
+}
+
+.userCard{
+background:rgba(255,255,255,0.05);
+padding:20px;
+border-radius:18px;
+margin-bottom:20px;
+}
+
+.onlineDot{
+width:12px;
+height:12px;
+background:#00ff88;
+border-radius:50%;
+display:inline-block;
+box-shadow:0 0 12px #00ff88;
+}
+
+.chatArea{
+display:flex;
+flex-direction:column;
+height:100%;
+}
+
+.chatHeader{
+height:90px;
+border-bottom:1px solid rgba(255,255,255,0.08);
+display:flex;
+align-items:center;
+padding:20px;
+font-size:22px;
+}
+
+.messages{
+flex:1;
+padding:20px;
+overflow-y:auto;
+display:flex;
+flex-direction:column;
+gap:16px;
+}
+
+.message{
+max-width:70%;
+padding:16px;
+border-radius:18px;
+background:rgba(255,255,255,0.08);
+animation:fadeIn 0.3s ease;
+}
+
+.self{
+align-self:flex-end;
+background:linear-gradient(45deg,#00aaff,#0066ff);
+}
+
+.fileCard{
+padding:12px;
+margin-top:10px;
+background:rgba(255,255,255,0.08);
+border-radius:10px;
+}
+
+.chatInputArea{
+height:110px;
+border-top:1px solid rgba(255,255,255,0.08);
+display:flex;
+align-items:center;
+gap:12px;
+padding:20px;
+}
+
+#messageInput{
+flex:1;
+height:55px;
+border:none;
+border-radius:14px;
+padding:0 20px;
+background:rgba(255,255,255,0.08);
+color:white;
+font-size:16px;
+outline:none;
+}
+
+.sendBtn,
+.uploadBtn{
+height:55px;
+padding:0 24px;
+border:none;
+border-radius:14px;
+background:linear-gradient(45deg,#00f5ff,#0066ff);
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+.typing{
+font-size:13px;
+color:#8ccfff;
+padding-left:25px;
+padding-bottom:8px;
+}
+
+@keyframes fadeIn{
+from{
+opacity:0;
+transform:translateY(10px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+@media(max-width:900px){
+
+#chatPage{
+grid-template-columns:1fr;
+}
+
+.sidebar{
+display:none;
+}
+
+.message{
+max-width:90%;
+}
+
+.title{
+font-size:34px;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div id="loginPage">
+<div class="title">QUANTUM SYNC</div>
+<input id="email" class="inputBox" value="kali@quantum.local">
+<input id="password" type="password" class="inputBox" value="kali">
+<button class="loginBtn" onclick="login()">ENTER PORTAL</button>
+</div>
+
+<div id="chatPage">
+
+<div class="sidebar">
+<div class="logo">QUANTUM</div>
+
+<div class="userCard">
+<h2>KALI</h2>
+<br>
+<span class="onlineDot"></span>
+<span> ONLINE</span>
+</div>
+
+<div class="userCard">
+<h3>FEATURES</h3>
+<br>
+<p>Realtime Sync</p>
+<p>Cloud Storage</p>
+<p>Encrypted Uploads</p>
+<p>Responsive UI</p>
+</div>
+</div>
+
+<div class="chatArea">
+<div class="chatHeader">
+Realtime Secure Channel
+</div>
+
+<div class="messages" id="messages"></div>
+
+<div class="typing" id="typing"></div>
+
+<div class="chatInputArea">
+<input id="messageInput" placeholder="Type secure message...">
+<input type="file" id="fileInput" hidden>
+<button class="uploadBtn" onclick="document.getElementById('fileInput').click()">FILE</button>
+<button class="sendBtn" onclick="sendMessage()">SEND</button>
+</div>
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getAuth,
+signInWithEmailAndPassword,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+onSnapshot,
+query,
+orderBy,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+getStorage,
+ref,
+uploadBytes,
+getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig = {
+apiKey: "YOUR_API_KEY",
+authDomain: "YOUR_DOMAIN",
+projectId: "YOUR_PROJECT_ID",
+storageBucket: "YOUR_STORAGE_BUCKET",
+messagingSenderId: "YOUR_SENDER_ID",
+appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const loginPage=document.getElementById('loginPage');
+const chatPage=document.getElementById('chatPage');
+const messagesDiv=document.getElementById('messages');
+const messageInput=document.getElementById('messageInput');
+const fileInput=document.getElementById('fileInput');
+
+window.login=async()=>{
+
+const email=document.getElementById('email').value;
+const password=document.getElementById('password').value;
+
+try{
+await signInWithEmailAndPassword(auth,email,password);
+}
+catch(err){
+alert(err.message);
+}
+
+};
+
+onAuthStateChanged(auth,user=>{
+
+if(user){
+loginPage.style.display='none';
+chatPage.style.display='grid';
+loadMessages();
+}
+
+});
+
+async function sendMessage(){
+
+const text=messageInput.value.trim();
+
+if(text==='')return;
+
+await addDoc(collection(db,'messages'),{
+text,
+user:'KALI',
+time:serverTimestamp(),
+type:'text'
+});
+
+messageInput.value='';
+
+}
+
+fileInput.addEventListener('change',async(e)=>{
+
+const file=e.target.files[0];
+
+if(!file)return;
+
+const storageRef=ref(storage,'uploads/'+Date.now()+'_'+file.name);
+
+await uploadBytes(storageRef,file);
+
+const url=await getDownloadURL(storageRef);
+
+await addDoc(collection(db,'messages'),{
+fileName:file.name,
+fileUrl:url,
+user:'KALI',
+time:serverTimestamp(),
+type:'file'
+});
+
+});
+
+function loadMessages(){
+
+const q=query(collection(db,'messages'),orderBy('time'));
+
+onSnapshot(q,snapshot=>{
+
+messagesDiv.innerHTML='';
+
+snapshot.forEach(doc=>{
+
+const data=doc.data();
+
+const div=document.createElement('div');
+
+div.className='message self';
+
+if(data.type==='text'){
+
+div.innerHTML=`
+<b>${data.user}</b>
+<br><br>
+${data.text}
+`;
+
+}
+else{
+
+div.innerHTML=`
+<b>${data.user}</b>
+<div class='fileCard'>
+📁 ${data.fileName}
+<br><br>
+<a href='${data.fileUrl}' target='_blank' style='color:cyan;'>Download File</a>
+</div>
+`;
+
+}
+
+messagesDiv.appendChild(div);
+
+});
+
+messagesDiv.scrollTop=messagesDiv.scrollHeight;
+
+});
+
+}
+
+messageInput.addEventListener('keypress',(e)=>{
+if(e.key==='Enter')sendMessage();
+});
+
+const canvas=document.getElementById('matrix');
+const ctx=canvas.getContext('2d');
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+const letters='01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%^&*';
+const fontSize=14;
+const columns=canvas.width/fontSize;
+const drops=[];
+
+for(let x=0;x<columns;x++){
+drops[x]=1;
+}
+
+function draw(){
+
+ctx.fillStyle='rgba(0,0,0,0.05)';
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ctx.fillStyle='#00ffee';
+ctx.font=fontSize+'px monospace';
+
+for(let i=0;i<drops.length;i++){
+
+const text=letters[Math.floor(Math.random()*letters.length)];
+
+ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+if(drops[i]*fontSize>canvas.height&&Math.random()>0.975){
+drops[i]=0;
+}
+
+drops[i]++;
+
+}
+
+}
+
+setInterval(draw,35);
+
+window.addEventListener('resize',()=>{
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+});
+
+</script>
+
+</body>
+</html>
+
