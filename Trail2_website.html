@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUANTUM // GHOST</title>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <style>
+        /* =========================================
+           CORE ARCHITECTURE & ACID-GLASS STYLING
+           ========================================= */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Outfit:wght@400;700;900&display=swap');
+
+        :root {
+            --bg-deep: #030305;
+            --acid-green: #ccff00;
+            --cyber-purple: #b026ff;
+            --hacker-cyan: #00f0ff;
+            --danger-red: #ff0055;
+            --glass-bg: rgba(15, 15, 20, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body, html {
+            width: 100vw; height: 100vh;
+            background-color: var(--bg-deep);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Canvas Background */
+        #node-matrix {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0; pointer-events: auto;
+        }
+
+        /* Vignette Overlay */
+        .vignette {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 30%, var(--bg-deep) 100%);
+            z-index: 1; pointer-events: none;
+        }
+
+        /* Main Application Window */
+        #os-window {
+            position: relative; z-index: 10;
+            width: 95vw; max-width: 1200px; height: 90vh;
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 0 80px rgba(0, 240, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02);
+            display: flex; overflow: hidden;
+            animation: bootUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: scale(0.95) translateY(20px);
+        }
+
+        @keyframes bootUp {
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Sidebar UI */
+        #sidebar {
+            width: 320px; border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column;
+            background: rgba(0, 0, 0, 0.2); padding: 24px;
+        }
+
+        .brand {
+            font-family: 'Outfit', sans-serif; font-weight: 900;
+            font-size: 2rem; text-transform: uppercase; letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--hacker-cyan), var(--cyber-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 40px; position: relative;
+        }
+
+        .brand::after {
+            content: 'P2P'; position: absolute; top: -10px; right: 0;
+            font-size: 0.8rem; background: var(--acid-green);
+            color: #000; padding: 2px 8px; border-radius: 10px;
+            -webkit-text-fill-color: #000; font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Controls & Inputs */
+        .control-group { margin-bottom: 24px; }
+        .control-label {
+            font-size: 0.75rem; color: #888; text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 8px; display: block;
+        }
+
+        input[type="text"] {
+            width: 100%; padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border);
+            border-radius: 12px; color: var(--hacker-cyan);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+            outline: none; transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--hacker-cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        button {
+            width: 100%; padding: 16px; margin-top: 8px;
+            background: transparent; border: 1px solid var(--glass-highlight);
+            color: #fff; font-family: 'Outfit', sans-serif;
+            font-weight: 700; font-size: 1rem; text-transform: uppercase;
+            letter-spacing: 1px; border-radius: 12px;
+            cursor: pointer; position: relative; overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        button::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover { background: var(--glass-highlight); transform: translateY(-2px); }
+        button:hover::before { left: 100%; }
+        
+        button.primary {
+            background: var(--hacker-cyan); color: #000; border: none;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+        button.primary:hover { background: #fff; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5); }
+
+        /* Main Chat Area */
+        #main-area {
+            flex-grow: 1; display: flex; flex-direction: column;
+            position: relative; background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, transparent 100%);
+        }
+
+        #status-bar {
+            height: 70px; border-bottom: 1px solid var(--glass-border);
+            display: flex; align-items: center; padding: 0 30px;
+            justify-content: space-between; background: rgba(0,0,0,0.2);
+        }
+
+        .status-indicator {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.85rem; color: #888; text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--danger-red);
+            box-shadow: 0 0 10px var(--danger-red); transition: all 0.5s ease;
+        }
+        .status-dot.connected { background: var(--acid-green); box-shadow: 0 0 15px var(--acid-green); }
+
+        /* Messages */
+        #messages-container {
+            flex-grow: 1; padding: 30px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 20px;
+            scroll-behavior: smooth;
+        }
+        #messages-container::-webkit-scrollbar { width: 6px; }
+        #messages-container::-webkit-scrollbar-thumb { background: var(--glass-highlight); border-radius: 10px; }
+
+        .message-wrapper {
+            max-width: 75%; display: flex; flex-direction: column;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: translateY(20px);
+        }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
+        .message-wrapper.self { align-self: flex-end; align-items: flex-end; }
+        .message-wrapper.peer { align-self: flex-start; align-items: flex-start; }
+
+        .message-content {
+            padding: 16px 20px; border-radius: 16px;
+            font-size: 0.95rem; line-height: 1.5; word-wrap: break-word;
+            position: relative; overflow: hidden;
+        }
+
+        .self .message-content {
+            background: var(--hacker-cyan); color: #000;
+            border-bottom-right-radius: 4px; font-weight: 700;
+        }
+        .peer .message-content {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px; color: #fff;
+        }
+
+        /* File Images in Chat */
+        .msg-image { max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+
+        /* Input Area */
+        #input-area {
+            padding: 24px 30px; border-top: 1px solid var(--glass-border);
+            display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.3);
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        #input-area.active { opacity: 1; pointer-events: auto; }
+
+        #chat-input {
+            flex-grow: 1; background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 18px 24px; color: #fff; font-size: 1rem;
+        }
+        
+        .file-upload-btn {
+            background: transparent; border: 1px dashed var(--glass-highlight);
+            width: 55px; height: 55px; border-radius: 14px; margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            color: var(--glass-highlight); font-size: 1.5rem; transition: all 0.3s;
+        }
+        .file-upload-btn:hover { border-color: var(--cyber-purple); color: var(--cyber-purple); }
+
+        .send-btn {
+            width: 55px; height: 55px; margin: 0; padding: 0; border-radius: 14px;
+            background: var(--hacker-cyan); color: #000; font-size: 1.2rem;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 900px) {
+            #os-window { flex-direction: column; width: 100vw; height: 100vh; border-radius: 0; border: none; }
+            #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 15px; }
+            .brand { margin-bottom: 15px; font-size: 1.5rem; }
+            #status-bar { display: none; } /* Save space on mobile */
+            .control-group { margin-bottom: 10px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HIGH-PERFORMANCE CANVAS BACKGROUND -->
+    <canvas id="node-matrix"></canvas>
+    <div class="vignette"></div>
+
+    <!-- MAIN OS WINDOW -->
+    <div id="os-window">
+        
+        <!-- SIDEBAR CONTROLS -->
+        <div id="sidebar">
+            <div class="brand">Quantum_OS</div>
+            
+            <div id="setup-panel">
+                <div class="control-group">
+                    <span class="control-label">Your Sync Identity</span>
+                    <input type="text" id="my-id" readonly placeholder="Generating key..." onclick="copyMyId()">
+                    <button class="primary" onclick="initPeer()">1. Initialize Node</button>
+                </div>
+
+                <div class="control-group" style="margin-top: 40px;">
+                    <span class="control-label">Target Node ID</span>
+                    <input type="text" id="target-id" placeholder="Paste partner's key here">
+                    <button onclick="connectToPeer()">2. Establish Uplink</button>
+                </div>
+            </div>
+
+            <div id="active-panel" style="display: none; margin-top: auto;">
+                <button onclick="location.reload()" style="border-color: var(--danger-red); color: var(--danger-red);">Sever Connection</button>
+            </div>
+        </div>
+
+        <!-- MAIN COMMUNICATION AREA -->
+        <div id="main-area">
+            <div id="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot" id="dot"></div>
+                    <span id="status-text">SYSTEM OFFLINE / AWAITING INITIALIZATION</span>
+                </div>
+                <div style="font-size: 0.75rem; color: #555;">ENCRYPTION: RSA-AES-256 (WEBRTC)</div>
+            </div>
+
+            <div id="messages-container">
+                <div style="text-align: center; color: #666; font-size: 0.8rem; margin-top: auto; padding: 20px;">
+                    WARNING: Data resides in volatile memory only. 
+                </div>
+            </div>
+
+            <div id="input-area">
+                <input type="file" id="file-input" style="display: none;" accept="image/*">
+                <button class="file-upload-btn" onclick="document.getElementById('file-input').click()">+</button>
+                <input type="text" id="chat-input" placeholder="Transmit secure payload..." autocomplete="off">
+                <button class="send-btn" onclick="sendData()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================
+           MODULE 1: MATH-SYNTH AUDIO ENGINE
+           (Generates sound without external files)
+           ========================================= */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function playSynth(type, freq, duration, volLevel) {
+            if (!audioCtx) audioCtx = new AudioContext();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            // Envelope
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(volLevel, audioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const SFX = {
+            boot: () => playSynth('square', 150, 0.5, 0.1),
+            click: () => playSynth('sine', 800, 0.1, 0.1),
+            success: () => { playSynth('sine', 600, 0.1, 0.1); setTimeout(() => playSynth('sine', 1200, 0.2, 0.1), 100); },
+            error: () => playSynth('sawtooth', 100, 0.3, 0.2),
+            msgIn: () => playSynth('triangle', 880, 0.15, 0.1),
+            msgOut: () => playSynth('triangle', 440, 0.1, 0.1)
+        };
+
+        // Attach click sounds to all buttons
+        document.querySelectorAll('button').forEach(b => b.addEventListener('mousedown', SFX.click));
+        window.onload = SFX.boot;
+
+        /* =========================================
+           MODULE 2: KINETIC NODE MATRIX (CANVAS)
+           ========================================= */
+        const canvas = document.getElementById('node-matrix');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+        let mouse = { x: -1000, y: -1000 };
+
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            const particleCount = Math.floor((width * height) / 12000); // Responsive density
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width, y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5,
+                    size: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        window.addEventListener('resize', initCanvas);
+        canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        canvas.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; });
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.5)';
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx; p.y += p.vy;
+
+                // Bounce off edges
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                // Draw Particle
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+
+                // Mouse Interaction
+                let dxMouse = mouse.x - p.x; let dyMouse = mouse.y - p.y;
+                let distMouse = Math.sqrt(dxMouse*dxMouse + dyMouse*dyMouse);
+                if (distMouse < 150) {
+                    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y);
+                    ctx.strokeStyle = `rgba(204, 255, 0, ${1 - distMouse/150})`;
+                    ctx.stroke();
+                }
+
+                // Connect Particles
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x; let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < 100) {
+                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(0, 240, 255, ${0.2 - dist/500})`;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateCanvas);
+        }
+        initCanvas(); animateCanvas();
+
+        /* =========================================
+           MODULE 3: P2P WEBRTC ENGINE (PEERJS)
+           ========================================= */
+        let peer = null;
+        let connection = null;
+
+        const ui = {
+            myId: document.getElementById('my-id'),
+            targetId: document.getElementById('target-id'),
+            statusText: document.getElementById('status-text'),
+            dot: document.getElementById('dot'),
+            inputArea: document.getElementById('input-area'),
+            chatInput: document.getElementById('chat-input'),
+            msgContainer: document.getElementById('messages-container'),
+            setupPanel: document.getElementById('setup-panel'),
+            activePanel: document.getElementById('active-panel')
+        };
+
+        function setStatus(text, isActive = false) {
+            ui.statusText.innerText = text;
+            if (isActive) {
+                ui.dot.classList.add('connected');
+                ui.inputArea.classList.add('active');
+                ui.setupPanel.style.display = 'none';
+                ui.activePanel.style.display = 'block';
+                SFX.success();
+            } else {
+                ui.dot.classList.remove('connected');
+                ui.inputArea.classList.remove('active');
+            }
+        }
+
+        function initPeer() {
+            if(peer) return;
+            setStatus("INITIALIZING QUANTUM TUNNEL...");
+            peer = new Peer(); // Generates a random secure UUID
+
+            peer.on('open', (id) => {
+                ui.myId.value = id;
+                setStatus("NODE ACTIVE. AWAITING UPLINK.");
+            });
+
+            // Listen for incoming connection (If Mobile connects to Laptop)
+            peer.on('connection', (conn) => {
+                if (connection) return; // Only allow 1-to-1
+                connection = conn;
+                setupConnectionHandlers();
+            });
+
+            peer.on('error', (err) => {
+                setStatus("ERR: " + err.type); SFX.error();
+            });
+        }
+
+        function copyMyId() {
+            if(!ui.myId.value) return;
+            ui.myId.select(); document.execCommand('copy');
+            const original = ui.myId.value;
+            ui.myId.value = "COPIED TO CLIPBOARD!";
+            setTimeout(() => ui.myId.value = original, 1500);
+            SFX.click();
+        }
+
+        function connectToPeer() {
+            const target = ui.targetId.value.trim();
+            if (!target) return alert("Enter a Target ID");
+            if (!peer) initPeer();
+
+            setStatus("NEGOTIATING HANDSHAKE...");
+            // Connect to Target (If Laptop connects to Mobile)
+            connection = peer.connect(target);
+            setupConnectionHandlers();
+        }
+
+        function setupConnectionHandlers() {
+            connection.on('open', () => {
+                setStatus(`UPLINK ESTABLISHED SECURELY`, true);
+            });
+
+            // Receive Data (Text or Base64 Image)
+            connection.on('data', (data) => {
+                SFX.msgIn();
+                if (data.type === 'text') renderMsg(data.payload, 'peer');
+                if (data.type === 'image') renderImage(data.payload, 'peer');
+            });
+
+            connection.on('close', () => {
+                setStatus("CONNECTION SEVERED.");
+                SFX.error();
+                setTimeout(() => location.reload(), 2000);
+            });
+        }
+
+        /* =========================================
+           MODULE 4: DATA TRANSMISSION & UI RENDER
+           ========================================= */
+        function sendData() {
+            const text = ui.chatInput.value.trim();
+            if (!text || !connection) return;
+
+            // Send via WebRTC Data Channel
+            connection.send({ type: 'text', payload: text });
+            
+            // Render Locally
+            renderMsg(text, 'self');
+            ui.chatInput.value = '';
+            SFX.msgOut();
+        }
+
+        ui.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendData();
+        });
+
+        // Handle File Upload (Convert Image to Base64 to send over WebRTC)
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file || !connection) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64Str = event.target.result;
+                connection.send({ type: 'image', payload: base64Str });
+                renderImage(base64Str, 'self');
+                SFX.msgOut();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function renderMsg(text, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${sender}`;
+            wrapper.innerHTML = `<div class="message-content">${escapeHTML(text)}</div>`;
+            ui.msgContainer.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function renderImage(base64, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${sender}`;
+            wrapper.innerHTML = `<div class="message-content" style="padding: 5px;">
+                                    <img src="${base64}" class="msg-image" onclick="window.open(this.src)">
+                                 </div>`;
+            ui.msgContainer.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            ui.msgContainer.scrollTo({
+                top: ui.msgContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag]));
+        }
+    </script>
+</body>
+</html>
