@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUANTUM // GHOST</title>
+    <title>QUANTUM // GHOST V2 (SCREEN SHARE)</title>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
         /* =========================================
@@ -17,540 +17,396 @@
             --cyber-purple: #b026ff;
             --hacker-cyan: #00f0ff;
             --danger-red: #ff0055;
-            --glass-bg: rgba(15, 15, 20, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-highlight: rgba(255, 255, 255, 0.15);
+            --glass-bg: rgba(15, 15, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-highlight: rgba(255, 255, 255, 0.2);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body, html {
             width: 100vw; height: 100vh;
-            background-color: var(--bg-deep);
-            color: #fff;
+            background-color: var(--bg-deep); color: #fff;
             font-family: 'JetBrains Mono', monospace;
-            overflow: hidden;
-            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
         /* Canvas Background */
-        #node-matrix {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 0; pointer-events: auto;
-        }
-
-        /* Vignette Overlay */
-        .vignette {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, transparent 30%, var(--bg-deep) 100%);
-            z-index: 1; pointer-events: none;
-        }
+        #node-matrix { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        .vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, transparent 20%, var(--bg-deep) 100%); z-index: 1; pointer-events: none; }
 
         /* Main Application Window */
         #os-window {
             position: relative; z-index: 10;
-            width: 95vw; max-width: 1200px; height: 90vh;
-            background: var(--glass-bg);
-            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            box-shadow: 0 0 80px rgba(0, 240, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02);
+            width: 98vw; max-width: 1400px; height: 95vh;
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 16px;
+            box-shadow: 0 0 60px rgba(0, 240, 255, 0.05);
             display: flex; overflow: hidden;
-            animation: bootUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0; transform: scale(0.95) translateY(20px);
+            animation: bootUp 1s ease-out forwards;
         }
 
-        @keyframes bootUp {
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
+        @keyframes bootUp { from { opacity: 0; transform: scale(0.98) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-        /* Sidebar UI */
+        /* Sidebar */
         #sidebar {
-            width: 320px; border-right: 1px solid var(--glass-border);
-            display: flex; flex-direction: column;
-            background: rgba(0, 0, 0, 0.2); padding: 24px;
+            width: 300px; border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.4); padding: 24px;
         }
 
         .brand {
-            font-family: 'Outfit', sans-serif; font-weight: 900;
-            font-size: 2rem; text-transform: uppercase; letter-spacing: -1px;
-            background: linear-gradient(135deg, var(--hacker-cyan), var(--cyber-purple));
+            font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--hacker-cyan), var(--acid-green));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 40px; position: relative;
+            margin-bottom: 30px; letter-spacing: -1px; text-transform: uppercase;
         }
 
-        .brand::after {
-            content: 'P2P'; position: absolute; top: -10px; right: 0;
-            font-size: 0.8rem; background: var(--acid-green);
-            color: #000; padding: 2px 8px; border-radius: 10px;
-            -webkit-text-fill-color: #000; font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Controls & Inputs */
-        .control-group { margin-bottom: 24px; }
-        .control-label {
-            font-size: 0.75rem; color: #888; text-transform: uppercase;
-            letter-spacing: 2px; margin-bottom: 8px; display: block;
-        }
-
+        .control-group { margin-bottom: 20px; }
+        .control-label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+        
         input[type="text"] {
-            width: 100%; padding: 14px 16px;
-            background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border);
-            border-radius: 12px; color: var(--hacker-cyan);
-            font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
-            outline: none; transition: all 0.3s ease;
+            width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--glass-border); border-radius: 8px;
+            color: var(--hacker-cyan); font-family: 'JetBrains Mono', monospace; outline: none;
         }
-
-        input[type="text"]:focus {
-            border-color: var(--hacker-cyan);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
-        }
+        input[type="text"]:focus { border-color: var(--hacker-cyan); }
 
         button {
-            width: 100%; padding: 16px; margin-top: 8px;
+            width: 100%; padding: 14px; margin-top: 10px;
             background: transparent; border: 1px solid var(--glass-highlight);
-            color: #fff; font-family: 'Outfit', sans-serif;
-            font-weight: 700; font-size: 1rem; text-transform: uppercase;
-            letter-spacing: 1px; border-radius: 12px;
-            cursor: pointer; position: relative; overflow: hidden;
-            transition: all 0.3s ease;
+            color: #fff; font-family: 'Outfit', sans-serif; font-weight: 700;
+            text-transform: uppercase; border-radius: 8px; cursor: pointer; transition: 0.2s;
         }
+        button:hover { background: var(--glass-highlight); }
+        button.primary { background: var(--hacker-cyan); color: #000; border: none; }
+        button.primary:hover { background: #fff; box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+        button.action-btn { background: var(--cyber-purple); color: #fff; border: none; }
+        button.action-btn:hover { background: #d05cff; box-shadow: 0 0 15px var(--cyber-purple); }
 
-        button::before {
-            content: ''; position: absolute; top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.5s ease;
-        }
-
-        button:hover { background: var(--glass-highlight); transform: translateY(-2px); }
-        button:hover::before { left: 100%; }
-        
-        button.primary {
-            background: var(--hacker-cyan); color: #000; border: none;
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-        }
-        button.primary:hover { background: #fff; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5); }
-
-        /* Main Chat Area */
-        #main-area {
-            flex-grow: 1; display: flex; flex-direction: column;
-            position: relative; background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, transparent 100%);
+        /* Main Workspace (Split View) */
+        #workspace {
+            flex-grow: 1; display: flex; flex-direction: column; position: relative;
         }
 
         #status-bar {
-            height: 70px; border-bottom: 1px solid var(--glass-border);
-            display: flex; align-items: center; padding: 0 30px;
-            justify-content: space-between; background: rgba(0,0,0,0.2);
+            height: 60px; border-bottom: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+            background: rgba(0,0,0,0.3); font-size: 0.8rem; color: #888;
         }
 
-        .status-indicator {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.85rem; color: #888; text-transform: uppercase;
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger-red); display: inline-block; margin-right: 8px; }
+        .status-dot.connected { background: var(--acid-green); box-shadow: 0 0 10px var(--acid-green); }
+
+        /* Content Area (Holds Video and Chat) */
+        #content-area {
+            flex-grow: 1; display: flex; overflow: hidden;
         }
 
-        .status-dot {
-            width: 8px; height: 8px; border-radius: 50%; background: var(--danger-red);
-            box-shadow: 0 0 10px var(--danger-red); transition: all 0.5s ease;
+        /* Video Stream Container */
+        #video-container {
+            flex-grow: 0; width: 0; background: #000; transition: all 0.4s ease;
+            display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--glass-border);
+            overflow: hidden; position: relative;
         }
-        .status-dot.connected { background: var(--acid-green); box-shadow: 0 0 15px var(--acid-green); }
+        #video-container.active { flex-grow: 2; width: auto; }
+        
+        video {
+            width: 100%; height: 100%; object-fit: contain; background: #000;
+        }
+        .stream-label {
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7);
+            padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; color: var(--danger-red);
+            border: 1px solid var(--danger-red); animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 0.3; } 100% { opacity: 0.8; } }
 
-        /* Messages */
+        /* Chat Container */
+        #chat-section {
+            flex-grow: 1; display: flex; flex-direction: column; width: 100%;
+        }
+
         #messages-container {
-            flex-grow: 1; padding: 30px; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 20px;
-            scroll-behavior: smooth;
+            flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;
         }
-        #messages-container::-webkit-scrollbar { width: 6px; }
-        #messages-container::-webkit-scrollbar-thumb { background: var(--glass-highlight); border-radius: 10px; }
+        
+        .message-wrapper { max-width: 80%; display: flex; flex-direction: column; animation: slideIn 0.3s forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message-wrapper.self { align-self: flex-end; }
+        .message-wrapper.peer { align-self: flex-start; }
 
-        .message-wrapper {
-            max-width: 75%; display: flex; flex-direction: column;
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0; transform: translateY(20px);
-        }
-        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
-
-        .message-wrapper.self { align-self: flex-end; align-items: flex-end; }
-        .message-wrapper.peer { align-self: flex-start; align-items: flex-start; }
-
-        .message-content {
-            padding: 16px 20px; border-radius: 16px;
-            font-size: 0.95rem; line-height: 1.5; word-wrap: break-word;
-            position: relative; overflow: hidden;
-        }
-
-        .self .message-content {
-            background: var(--hacker-cyan); color: #000;
-            border-bottom-right-radius: 4px; font-weight: 700;
-        }
-        .peer .message-content {
-            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border);
-            border-bottom-left-radius: 4px; color: #fff;
-        }
-
-        /* File Images in Chat */
-        .msg-image { max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+        .message-content { padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; }
+        .self .message-content { background: var(--hacker-cyan); color: #000; border-bottom-right-radius: 2px; }
+        .peer .message-content { background: rgba(0,0,0,0.6); border: 1px solid var(--glass-border); border-bottom-left-radius: 2px; }
+        .msg-image { max-width: 100%; border-radius: 8px; margin-top: 5px; border: 1px solid rgba(255,255,255,0.2); }
 
         /* Input Area */
         #input-area {
-            padding: 24px 30px; border-top: 1px solid var(--glass-border);
-            display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.3);
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            padding: 20px; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.4);
+            display: flex; gap: 10px; align-items: center; opacity: 0; pointer-events: none; transition: 0.3s;
         }
         #input-area.active { opacity: 1; pointer-events: auto; }
-
-        #chat-input {
-            flex-grow: 1; background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--glass-border); border-radius: 14px;
-            padding: 18px 24px; color: #fff; font-size: 1rem;
-        }
-        
-        .file-upload-btn {
-            background: transparent; border: 1px dashed var(--glass-highlight);
-            width: 55px; height: 55px; border-radius: 14px; margin: 0; padding: 0;
-            display: flex; justify-content: center; align-items: center;
-            color: var(--glass-highlight); font-size: 1.5rem; transition: all 0.3s;
-        }
-        .file-upload-btn:hover { border-color: var(--cyber-purple); color: var(--cyber-purple); }
-
-        .send-btn {
-            width: 55px; height: 55px; margin: 0; padding: 0; border-radius: 14px;
-            background: var(--hacker-cyan); color: #000; font-size: 1.2rem;
-        }
-
-        /* Mobile Adjustments */
-        @media (max-width: 900px) {
-            #os-window { flex-direction: column; width: 100vw; height: 100vh; border-radius: 0; border: none; }
-            #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 15px; }
-            .brand { margin-bottom: 15px; font-size: 1.5rem; }
-            #status-bar { display: none; } /* Save space on mobile */
-            .control-group { margin-bottom: 10px; }
-        }
+        #chat-input { flex-grow: 1; padding: 14px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: #fff; }
+        .icon-btn { width: 45px; height: 45px; margin: 0; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; border-radius: 8px; }
 
     </style>
 </head>
 <body>
 
-    <!-- HIGH-PERFORMANCE CANVAS BACKGROUND -->
     <canvas id="node-matrix"></canvas>
     <div class="vignette"></div>
 
-    <!-- MAIN OS WINDOW -->
     <div id="os-window">
         
-        <!-- SIDEBAR CONTROLS -->
         <div id="sidebar">
-            <div class="brand">Quantum_OS</div>
+            <div class="brand">GHOST_V2</div>
             
             <div id="setup-panel">
                 <div class="control-group">
-                    <span class="control-label">Your Sync Identity</span>
-                    <input type="text" id="my-id" readonly placeholder="Generating key..." onclick="copyMyId()">
-                    <button class="primary" onclick="initPeer()">1. Initialize Node</button>
+                    <span class="control-label">Your Desktop ID</span>
+                    <input type="text" id="my-id" readonly placeholder="Generating..." onclick="copyToClipboard(this)">
+                    <button class="primary" onclick="initPeer()">1. Initialize</button>
                 </div>
 
-                <div class="control-group" style="margin-top: 40px;">
-                    <span class="control-label">Target Node ID</span>
-                    <input type="text" id="target-id" placeholder="Paste partner's key here">
-                    <button onclick="connectToPeer()">2. Establish Uplink</button>
+                <div class="control-group" style="margin-top: 30px;">
+                    <span class="control-label">Target Desktop ID</span>
+                    <input type="text" id="target-id" placeholder="Paste partner ID">
+                    <button onclick="connectToPeer()">2. Connect</button>
                 </div>
             </div>
 
             <div id="active-panel" style="display: none; margin-top: auto;">
-                <button onclick="location.reload()" style="border-color: var(--danger-red); color: var(--danger-red);">Sever Connection</button>
+                <div class="control-group">
+                    <span class="control-label">Media Tools</span>
+                    <button class="action-btn" onclick="startScreenShare()" id="share-btn">Cast Screen</button>
+                    <button onclick="location.reload()" style="border-color: var(--danger-red); color: var(--danger-red); margin-top: 15px;">Disconnect</button>
+                </div>
             </div>
         </div>
 
-        <!-- MAIN COMMUNICATION AREA -->
-        <div id="main-area">
+        <div id="workspace">
             <div id="status-bar">
-                <div class="status-indicator">
-                    <div class="status-dot" id="dot"></div>
-                    <span id="status-text">SYSTEM OFFLINE / AWAITING INITIALIZATION</span>
-                </div>
-                <div style="font-size: 0.75rem; color: #555;">ENCRYPTION: RSA-AES-256 (WEBRTC)</div>
+                <div><span class="status-dot" id="dot"></span><span id="status-text">OFFLINE</span></div>
+                <div>P2P ENCRYPTED // VOLATILE MEMORY</div>
             </div>
 
-            <div id="messages-container">
-                <div style="text-align: center; color: #666; font-size: 0.8rem; margin-top: auto; padding: 20px;">
-                    WARNING: Data resides in volatile memory only. 
+            <div id="content-area">
+                <!-- VIDEO FEED -->
+                <div id="video-container">
+                    <div class="stream-label">LIVE FEED</div>
+                    <video id="remote-video" autoplay playsinline></video>
                 </div>
-            </div>
 
-            <div id="input-area">
-                <input type="file" id="file-input" style="display: none;" accept="image/*">
-                <button class="file-upload-btn" onclick="document.getElementById('file-input').click()">+</button>
-                <input type="text" id="chat-input" placeholder="Transmit secure payload..." autocomplete="off">
-                <button class="send-btn" onclick="sendData()">➤</button>
+                <!-- CHAT FEED -->
+                <div id="chat-section">
+                    <div id="messages-container"></div>
+
+                    <div id="input-area">
+                        <input type="file" id="file-input" style="display: none;" accept="image/*">
+                        <button class="icon-btn" onclick="document.getElementById('file-input').click()" style="border-color: var(--acid-green); color: var(--acid-green);">📁</button>
+                        <input type="text" id="chat-input" placeholder="Type message..." autocomplete="off">
+                        <button class="icon-btn primary" onclick="sendData()">➤</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        /* =========================================
-           MODULE 1: MATH-SYNTH AUDIO ENGINE
-           (Generates sound without external files)
-           ========================================= */
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx;
-
-        function playSynth(type, freq, duration, volLevel) {
-            if (!audioCtx) audioCtx = new AudioContext();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            
-            // Envelope
-            gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(volLevel, audioCtx.currentTime + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + duration);
-        }
-
-        const SFX = {
-            boot: () => playSynth('square', 150, 0.5, 0.1),
-            click: () => playSynth('sine', 800, 0.1, 0.1),
-            success: () => { playSynth('sine', 600, 0.1, 0.1); setTimeout(() => playSynth('sine', 1200, 0.2, 0.1), 100); },
-            error: () => playSynth('sawtooth', 100, 0.3, 0.2),
-            msgIn: () => playSynth('triangle', 880, 0.15, 0.1),
-            msgOut: () => playSynth('triangle', 440, 0.1, 0.1)
-        };
-
-        // Attach click sounds to all buttons
-        document.querySelectorAll('button').forEach(b => b.addEventListener('mousedown', SFX.click));
-        window.onload = SFX.boot;
-
-        /* =========================================
-           MODULE 2: KINETIC NODE MATRIX (CANVAS)
-           ========================================= */
+        // === CANVAS BACKGROUND ENGINE ===
         const canvas = document.getElementById('node-matrix');
         const ctx = canvas.getContext('2d');
         let width, height, particles = [];
-        let mouse = { x: -1000, y: -1000 };
-
+        
         function initCanvas() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            particles = [];
-            const particleCount = Math.floor((width * height) / 12000); // Responsive density
-            
-            for (let i = 0; i < particleCount; i++) {
-                particles.push({
-                    x: Math.random() * width, y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5,
-                    size: Math.random() * 2 + 1
-                });
-            }
+            particles = Array.from({ length: 80 }, () => ({
+                x: Math.random() * width, y: Math.random() * height,
+                vx: (Math.random() - 0.5), vy: (Math.random() - 0.5)
+            }));
         }
-
         window.addEventListener('resize', initCanvas);
-        canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-        canvas.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; });
-
+        
         function animateCanvas() {
             ctx.clearRect(0, 0, width, height);
-            ctx.fillStyle = 'rgba(0, 240, 255, 0.5)';
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
-
-            for (let i = 0; i < particles.length; i++) {
-                let p = particles[i];
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.1)';
+            particles.forEach(p => {
                 p.x += p.vx; p.y += p.vy;
-
-                // Bounce off edges
                 if (p.x < 0 || p.x > width) p.vx *= -1;
                 if (p.y < 0 || p.y > height) p.vy *= -1;
-
-                // Draw Particle
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-
-                // Mouse Interaction
-                let dxMouse = mouse.x - p.x; let dyMouse = mouse.y - p.y;
-                let distMouse = Math.sqrt(dxMouse*dxMouse + dyMouse*dyMouse);
-                if (distMouse < 150) {
-                    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y);
-                    ctx.strokeStyle = `rgba(204, 255, 0, ${1 - distMouse/150})`;
-                    ctx.stroke();
-                }
-
-                // Connect Particles
-                for (let j = i + 1; j < particles.length; j++) {
-                    let p2 = particles[j];
-                    let dx = p.x - p2.x; let dy = p.y - p2.y;
-                    let dist = Math.sqrt(dx*dx + dy*dy);
-                    
-                    if (dist < 100) {
-                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y);
-                        ctx.strokeStyle = `rgba(0, 240, 255, ${0.2 - dist/500})`;
-                        ctx.stroke();
+                ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2); ctx.fill();
+                
+                particles.forEach(p2 => {
+                    let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 120) {
+                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                     }
-                }
-            }
+                });
+            });
             requestAnimationFrame(animateCanvas);
         }
         initCanvas(); animateCanvas();
 
-        /* =========================================
-           MODULE 3: P2P WEBRTC ENGINE (PEERJS)
-           ========================================= */
+        // === WEBRTC CORE (DATA + MEDIA) ===
         let peer = null;
-        let connection = null;
+        let dataConnection = null;
+        let mediaCall = null;
+        let localStream = null;
 
         const ui = {
-            myId: document.getElementById('my-id'),
-            targetId: document.getElementById('target-id'),
-            statusText: document.getElementById('status-text'),
+            status: document.getElementById('status-text'),
             dot: document.getElementById('dot'),
             inputArea: document.getElementById('input-area'),
             chatInput: document.getElementById('chat-input'),
-            msgContainer: document.getElementById('messages-container'),
-            setupPanel: document.getElementById('setup-panel'),
-            activePanel: document.getElementById('active-panel')
+            msgBox: document.getElementById('messages-container'),
+            videoContainer: document.getElementById('video-container'),
+            videoEl: document.getElementById('remote-video'),
+            shareBtn: document.getElementById('share-btn')
         };
 
-        function setStatus(text, isActive = false) {
-            ui.statusText.innerText = text;
-            if (isActive) {
+        function updateState(msg, connected = false) {
+            ui.status.innerText = msg;
+            if (connected) {
                 ui.dot.classList.add('connected');
                 ui.inputArea.classList.add('active');
-                ui.setupPanel.style.display = 'none';
-                ui.activePanel.style.display = 'block';
-                SFX.success();
-            } else {
-                ui.dot.classList.remove('connected');
-                ui.inputArea.classList.remove('active');
+                document.getElementById('setup-panel').style.display = 'none';
+                document.getElementById('active-panel').style.display = 'block';
             }
         }
 
         function initPeer() {
             if(peer) return;
-            setStatus("INITIALIZING QUANTUM TUNNEL...");
-            peer = new Peer(); // Generates a random secure UUID
-
-            peer.on('open', (id) => {
-                ui.myId.value = id;
-                setStatus("NODE ACTIVE. AWAITING UPLINK.");
+            updateState("INITIALIZING NODE...");
+            peer = new Peer();
+            
+            peer.on('open', id => {
+                document.getElementById('my-id').value = id;
+                updateState("NODE READY. AWAITING UPLINK.");
             });
 
-            // Listen for incoming connection (If Mobile connects to Laptop)
-            peer.on('connection', (conn) => {
-                if (connection) return; // Only allow 1-to-1
-                connection = conn;
-                setupConnectionHandlers();
+            // Handle incoming Data Connection
+            peer.on('connection', conn => {
+                dataConnection = conn;
+                setupDataEvents();
             });
 
-            peer.on('error', (err) => {
-                setStatus("ERR: " + err.type); SFX.error();
+            // Handle incoming Media Call (Screen Share)
+            peer.on('call', call => {
+                // Answer the call immediately
+                call.answer();
+                mediaCall = call;
+                
+                // When stream is received, show it
+                call.on('stream', remoteStream => {
+                    ui.videoContainer.classList.add('active');
+                    ui.videoEl.srcObject = remoteStream;
+                });
+                
+                call.on('close', () => {
+                    ui.videoContainer.classList.remove('active');
+                    ui.videoEl.srcObject = null;
+                });
             });
-        }
-
-        function copyMyId() {
-            if(!ui.myId.value) return;
-            ui.myId.select(); document.execCommand('copy');
-            const original = ui.myId.value;
-            ui.myId.value = "COPIED TO CLIPBOARD!";
-            setTimeout(() => ui.myId.value = original, 1500);
-            SFX.click();
         }
 
         function connectToPeer() {
-            const target = ui.targetId.value.trim();
-            if (!target) return alert("Enter a Target ID");
+            const target = document.getElementById('target-id').value.trim();
+            if (!target) return alert("Enter ID");
             if (!peer) initPeer();
 
-            setStatus("NEGOTIATING HANDSHAKE...");
-            // Connect to Target (If Laptop connects to Mobile)
-            connection = peer.connect(target);
-            setupConnectionHandlers();
+            updateState("CONNECTING...");
+            dataConnection = peer.connect(target);
+            setupDataEvents();
         }
 
-        function setupConnectionHandlers() {
-            connection.on('open', () => {
-                setStatus(`UPLINK ESTABLISHED SECURELY`, true);
-            });
-
-            // Receive Data (Text or Base64 Image)
-            connection.on('data', (data) => {
-                SFX.msgIn();
+        function setupDataEvents() {
+            dataConnection.on('open', () => { updateState("UPLINK SECURED", true); });
+            dataConnection.on('data', data => {
                 if (data.type === 'text') renderMsg(data.payload, 'peer');
                 if (data.type === 'image') renderImage(data.payload, 'peer');
             });
-
-            connection.on('close', () => {
-                setStatus("CONNECTION SEVERED.");
-                SFX.error();
-                setTimeout(() => location.reload(), 2000);
-            });
+            dataConnection.on('close', () => { alert("Disconnected"); location.reload(); });
         }
 
-        /* =========================================
-           MODULE 4: DATA TRANSMISSION & UI RENDER
-           ========================================= */
+        // === SCREEN SHARING LOGIC ===
+        async function startScreenShare() {
+            if (!dataConnection) return alert("Connect to a peer first.");
+            
+            try {
+                // Request Desktop Screen Stream
+                localStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: "always" },
+                    audio: false // Browsers handle desktop audio differently, keeping video-only for stability
+                });
+
+                // Call the peer with the stream
+                mediaCall = peer.call(dataConnection.peer, localStream);
+                
+                ui.shareBtn.innerText = "Sharing Screen...";
+                ui.shareBtn.style.background = "var(--danger-red)";
+
+                // Stop sharing if user clicks browser's native "Stop Sharing" button
+                localStream.getVideoTracks()[0].onended = () => {
+                    stopScreenShare();
+                };
+
+            } catch (err) {
+                console.error("Screen share failed", err);
+            }
+        }
+
+        function stopScreenShare() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            if (mediaCall) {
+                mediaCall.close();
+            }
+            ui.shareBtn.innerText = "Cast Screen";
+            ui.shareBtn.style.background = "var(--cyber-purple)";
+        }
+
+        // === CHAT & DATA LOGIC ===
         function sendData() {
             const text = ui.chatInput.value.trim();
-            if (!text || !connection) return;
-
-            // Send via WebRTC Data Channel
-            connection.send({ type: 'text', payload: text });
-            
-            // Render Locally
+            if (!text || !dataConnection) return;
+            dataConnection.send({ type: 'text', payload: text });
             renderMsg(text, 'self');
             ui.chatInput.value = '';
-            SFX.msgOut();
         }
 
-        ui.chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendData();
-        });
+        ui.chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendData(); });
 
-        // Handle File Upload (Convert Image to Base64 to send over WebRTC)
-        document.getElementById('file-input').addEventListener('change', function(e) {
+        document.getElementById('file-input').addEventListener('change', e => {
             const file = e.target.files[0];
-            if (!file || !connection) return;
-
+            if (!file || !dataConnection) return;
             const reader = new FileReader();
-            reader.onload = function(event) {
-                const base64Str = event.target.result;
-                connection.send({ type: 'image', payload: base64Str });
-                renderImage(base64Str, 'self');
-                SFX.msgOut();
+            reader.onload = ev => {
+                const b64 = ev.target.result;
+                dataConnection.send({ type: 'image', payload: b64 });
+                renderImage(b64, 'self');
             };
             reader.readAsDataURL(file);
         });
 
         function renderMsg(text, sender) {
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper ${sender}`;
-            wrapper.innerHTML = `<div class="message-content">${escapeHTML(text)}</div>`;
-            ui.msgContainer.appendChild(wrapper);
-            scrollToBottom();
+            ui.msgBox.insertAdjacentHTML('beforeend', `<div class="message-wrapper ${sender}"><div class="message-content">${escapeHTML(text)}</div></div>`);
+            ui.msgBox.scrollTop = ui.msgBox.scrollHeight;
         }
 
-        function renderImage(base64, sender) {
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper ${sender}`;
-            wrapper.innerHTML = `<div class="message-content" style="padding: 5px;">
-                                    <img src="${base64}" class="msg-image" onclick="window.open(this.src)">
-                                 </div>`;
-            ui.msgContainer.appendChild(wrapper);
-            scrollToBottom();
+        function renderImage(b64, sender) {
+            ui.msgBox.insertAdjacentHTML('beforeend', `<div class="message-wrapper ${sender}"><div class="message-content" style="padding:4px"><img src="${b64}" class="msg-image" onclick="window.open(this.src)"></div></div>`);
+            ui.msgBox.scrollTop = ui.msgBox.scrollHeight;
         }
 
-        function scrollToBottom() {
-            ui.msgContainer.scrollTo({
-                top: ui.msgContainer.scrollHeight,
-                behavior: 'smooth'
-            });
+        function copyToClipboard(el) {
+            if(!el.value) return;
+            el.select(); document.execCommand('copy');
+            alert("ID Copied!");
         }
 
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, tag => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-            }[tag]));
-        }
+        function escapeHTML(str) { return str.replace(/[&<>'"]/g, t => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[t])); }
     </script>
 </body>
 </html>
