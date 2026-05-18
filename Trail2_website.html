@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUANTUM // GHOST V2 (SCREEN SHARE)</title>
+    <title>QUANTUM // GHOST V2 (HIL EDITION)</title>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
         /* =========================================
@@ -186,24 +186,22 @@
         <div id="workspace">
             <div id="status-bar">
                 <div><span class="status-dot" id="dot"></span><span id="status-text">OFFLINE</span></div>
-                <div>P2P ENCRYPTED // VOLATILE MEMORY</div>
+                <div>P2P ENCRYPTED // VOLATILE MEMORY // HIL ACTIVE</div>
             </div>
 
             <div id="content-area">
-                <!-- VIDEO FEED -->
                 <div id="video-container">
                     <div class="stream-label">LIVE FEED</div>
                     <video id="remote-video" autoplay playsinline></video>
                 </div>
 
-                <!-- CHAT FEED -->
                 <div id="chat-section">
                     <div id="messages-container"></div>
 
                     <div id="input-area">
                         <input type="file" id="file-input" style="display: none;" accept="image/*">
                         <button class="icon-btn" onclick="document.getElementById('file-input').click()" style="border-color: var(--acid-green); color: var(--acid-green);">📁</button>
-                        <input type="text" id="chat-input" placeholder="Type message..." autocomplete="off">
+                        <input type="text" id="chat-input" placeholder="Type JSON/Message..." autocomplete="off">
                         <button class="icon-btn primary" onclick="sendData()">➤</button>
                     </div>
                 </div>
@@ -247,6 +245,13 @@
             requestAnimationFrame(animateCanvas);
         }
         initCanvas(); animateCanvas();
+
+        // === LOCAL PC BRIDGE ENGINE ===
+        // This pushes WebRTC data to your local Python/TSMaster script
+        const localBridge = new WebSocket('ws://localhost:8080');
+        
+        localBridge.onopen = () => console.log("Connected to local Python TSMaster Bridge!");
+        localBridge.onerror = (err) => console.log("Local Bridge not found. Run Python script.");
 
         // === WEBRTC CORE (DATA + MEDIA) ===
         let peer = null;
@@ -293,11 +298,9 @@
 
             // Handle incoming Media Call (Screen Share)
             peer.on('call', call => {
-                // Answer the call immediately
                 call.answer();
                 mediaCall = call;
                 
-                // When stream is received, show it
                 call.on('stream', remoteStream => {
                     ui.videoContainer.classList.add('active');
                     ui.videoEl.srcObject = remoteStream;
@@ -323,6 +326,13 @@
         function setupDataEvents() {
             dataConnection.on('open', () => { updateState("UPLINK SECURED", true); });
             dataConnection.on('data', data => {
+                
+                // ROUTE TO HARDWARE: If local bridge is active, push the data to Python/TSMaster!
+                if (localBridge.readyState === WebSocket.OPEN) {
+                    localBridge.send(JSON.stringify(data)); 
+                }
+
+                // ROUTE TO UI
                 if (data.type === 'text') renderMsg(data.payload, 'peer');
                 if (data.type === 'image') renderImage(data.payload, 'peer');
             });
@@ -334,19 +344,16 @@
             if (!dataConnection) return alert("Connect to a peer first.");
             
             try {
-                // Request Desktop Screen Stream
                 localStream = await navigator.mediaDevices.getDisplayMedia({
                     video: { cursor: "always" },
-                    audio: false // Browsers handle desktop audio differently, keeping video-only for stability
+                    audio: false 
                 });
 
-                // Call the peer with the stream
                 mediaCall = peer.call(dataConnection.peer, localStream);
                 
                 ui.shareBtn.innerText = "Sharing Screen...";
                 ui.shareBtn.style.background = "var(--danger-red)";
 
-                // Stop sharing if user clicks browser's native "Stop Sharing" button
                 localStream.getVideoTracks()[0].onended = () => {
                     stopScreenShare();
                 };
@@ -390,14 +397,43 @@
             reader.readAsDataURL(file);
         });
 
+        // ==========================================
+        //  UI RENDER & 2-MINUTE AUTO-DELETE LOGIC
+        // ==========================================
         function renderMsg(text, sender) {
-            ui.msgBox.insertAdjacentHTML('beforeend', `<div class="message-wrapper ${sender}"><div class="message-content">${escapeHTML(text)}</div></div>`);
+            // Create the element programmatically
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${sender}`;
+            wrapper.innerHTML = `<div class="message-content">${escapeHTML(text)}</div>`;
+            
+            ui.msgBox.appendChild(wrapper);
             ui.msgBox.scrollTop = ui.msgBox.scrollHeight;
+
+            // Trigger self-destruct sequence (120,000 ms = 2 minutes)
+            setTimeout(() => {
+                wrapper.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+                wrapper.style.opacity = "0";
+                wrapper.style.transform = "translateY(-10px)";
+                // Wait for animation to finish before removing from DOM
+                setTimeout(() => wrapper.remove(), 500);
+            }, 120000); 
         }
 
         function renderImage(b64, sender) {
-            ui.msgBox.insertAdjacentHTML('beforeend', `<div class="message-wrapper ${sender}"><div class="message-content" style="padding:4px"><img src="${b64}" class="msg-image" onclick="window.open(this.src)"></div></div>`);
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${sender}`;
+            wrapper.innerHTML = `<div class="message-content" style="padding:4px"><img src="${b64}" class="msg-image" onclick="window.open(this.src)"></div>`;
+            
+            ui.msgBox.appendChild(wrapper);
             ui.msgBox.scrollTop = ui.msgBox.scrollHeight;
+
+            // Trigger self-destruct sequence (120,000 ms = 2 minutes)
+            setTimeout(() => {
+                wrapper.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+                wrapper.style.opacity = "0";
+                wrapper.style.transform = "translateY(-10px)";
+                setTimeout(() => wrapper.remove(), 500);
+            }, 120000);
         }
 
         function copyToClipboard(el) {
